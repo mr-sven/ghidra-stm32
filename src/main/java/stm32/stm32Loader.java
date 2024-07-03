@@ -442,8 +442,9 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 		// First we loop through our memory map that we created:
 		for(STM32MemRegion memregion: STM32MEM)	{
 			try {
-				mem.createUninitializedBlock(memregion.name, api.toAddr(memregion.addr), memregion.size, false);
-				api.createLabel(api.toAddr(memregion.addr),memregion.name.replace(" ","_"),false);
+                MemoryBlock block = mem.createUninitializedBlock(memregion.name, api.toAddr(memregion.addr), memregion.size, false);
+                block.setPermissions​(memregion.read, memregion.write, memregion.execute);
+                api.createLabel(api.toAddr(memregion.addr),memregion.name.replace(" ","_"),false);
 			} catch (LockException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -462,7 +463,8 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 			}
 		}
 		try {
-			mem.createInitializedBlock("Main Memory", api.toAddr(0x8000000), inStream, 0xFFFFF, monitor, false);
+            MemoryBlock block = mem.createInitializedBlock("Main Memory", api.toAddr(0x8000000), inStream, 0x200000, monitor, false);
+            block.setPermissions​(true, false, true);
 		} catch (LockException | MemoryConflictException | AddressOverflowException | CancelledException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -488,10 +490,10 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 			for(STM32InterruptVector vector: STM32IVT) {
 				int ptrVal = mem.getInt(api.toAddr(0x8000000+vector.addr));
 				try {
-				Data ptrData = api.createDWord(api.toAddr(0x8000000+vector.addr));
-				api.createDWord(api.toAddr(0x8000000+vector.addr));
-				api.createLabel(api.toAddr(0x8000000+vector.addr),vector.name,true);
-				api.createMemoryReference(ptrData, api.toAddr(ptrVal), ghidra.program.model.symbol.RefType.DATA);
+					Data ptrData = api.createDWord(api.toAddr(0x8000000+vector.addr));
+					api.createDWord(api.toAddr(0x8000000+vector.addr));
+					api.createLabel(api.toAddr(0x8000000+vector.addr),vector.name,true);
+					api.createMemoryReference(ptrData, api.toAddr(ptrVal), ghidra.program.model.symbol.RefType.DATA);
 				} catch(ghidra.util.exception.InvalidInputException e) {
 					// This is ugly, need to fix
 					continue;
