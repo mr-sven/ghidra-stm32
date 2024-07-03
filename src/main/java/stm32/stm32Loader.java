@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,9 +54,9 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 			this.label = label;
 			this.addr = addr;
 		}
-		
+
 	}
-	
+
 	private static final RegLabel [] USBFSRegs = {
 			new RegLabel("OTG_FS_GOTGCTL",0x0),
 			new RegLabel("OTG_FS_GOTGINT",0x4),
@@ -180,7 +180,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
             new RegLabel("OTG_HS_DIEPCTL5", 0x9A0),
             new RegLabel("OTG_HS_DIEPCTL6", 0x9C0),
             new RegLabel("OTG_HS_DIEPCTL7", 0x9E0),
-            
+
             new RegLabel("OTG_HS_DIEPCTL0", 0x900),
             new RegLabel("OTG_HS_DIEPINTx", 0x908),
             new RegLabel("OTG_HS_DIEPTSIZ0", 0x910),
@@ -194,7 +194,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
             new RegLabel("OTG_HS_DOEPINT", 0xB08),
             new RegLabel("OTG_HS_DOEPTSIZ",0xB10),
 	};
-	
+
 
 	private static class STM32InterruptVector{
 		String name;
@@ -205,7 +205,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 			this.addr = addr;
 		}
 	}
-	
+
 	private static final STM32InterruptVector [] STM32IVT = {
 			new STM32InterruptVector("RESET",0x4),
 			new STM32InterruptVector("NMI",0x8),
@@ -297,10 +297,20 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 			new STM32InterruptVector("OTG_HS",0x174),
 			new STM32InterruptVector("DCMI",0x178),
 			new STM32InterruptVector("CRYP",0x17C),
-			new STM32InterruptVector("HACH_RNG",0x180),
-		
-		};	
-	
+			new STM32InterruptVector("HASH_RNG",0x180),
+			new STM32InterruptVector("FPU",0x184),
+			new STM32InterruptVector("UART7",0x188),
+			new STM32InterruptVector("UART8",0x18C),
+			new STM32InterruptVector("SPI4",0x190),
+			new STM32InterruptVector("SPI5",0x194),
+			new STM32InterruptVector("SPI6",0x198),
+			new STM32InterruptVector("SAI1",0x19C),
+			new STM32InterruptVector("LCD_FTF",0x1A0),
+			new STM32InterruptVector("LCD_TFT_E",0x1A4),
+			new STM32InterruptVector("DMA2D",0x1A8),
+
+		};
+
 	private static class STM32MemRegion {
 		String name;
 		int addr;
@@ -388,7 +398,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 	@Override
 	public String getName() {
 
-		// TODO: Name the loader.  This name must match the name of the loader in the .opinion 
+		// TODO: Name the loader.  This name must match the name of the loader in the .opinion
 		// files.
 
 		return "STM32F2";
@@ -398,9 +408,9 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 	public Collection<LoadSpec> findSupportedLoadSpecs(ByteProvider provider) throws IOException {
 		List<LoadSpec> loadSpecs = new ArrayList<>();
 
-		// TODO: Examine the bytes in 'provider' to determine if this loader can load it.  If it 
+		// TODO: Examine the bytes in 'provider' to determine if this loader can load it.  If it
 		// can load it, return the appropriate load specifications.
-		
+
 		// The STM32 has a 32 bit Arm Cortex LE core, so that is the language that we will use
 		loadSpecs.add(new LoadSpec(this, 0, new LanguageCompilerSpecPair("ARM:LE:32:Cortex", "default"), true));
 		return loadSpecs;
@@ -416,7 +426,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 		Memory mem = program.getMemory();
 		// TODO: Load the bytes from 'provider' into the 'program'.
 		// This is where we actually "Load" the program into ghidra
-		
+
 		// First we loop through our memory map that we created:
 		for(STM32MemRegion memregion: STM32MEM)	{
 			try {
@@ -453,9 +463,9 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 			Data stackAddrData = api.createDWord(api.toAddr(0x8000000));
 			api.createLabel(api.toAddr(stackAddr),"_STACK_BEGIN",true);
 			api.createMemoryReference(stackAddrData, api.toAddr(stackAddr), ghidra.program.model.symbol.RefType.DATA);
-			
+
 			// Mark the entry point of the binary, also referenced in the datasheet on page 59
-			
+
 			/*
 			int entryPoint = mem.getInt(api.toAddr(0x8000004));
 			Data entryPointData = api.createDWord(api.toAddr(0x8000004));
@@ -475,14 +485,14 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 					continue;
 				}
 			}
-			
+
 			for(RegLabel rlabel:USBHSRegs) {
 				api.createLabel(api.toAddr(rlabel.addr+0x40040000),rlabel.label,true);
 			}
 			for(RegLabel rlabel:USBFSRegs) {
 				api.createLabel(api.toAddr(rlabel.addr+0x50000000),rlabel.label,true);
 			}
-			
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
