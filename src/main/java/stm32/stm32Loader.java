@@ -429,12 +429,11 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
     }
 
     @Override
-    protected void load(ByteProvider provider, LoadSpec loadSpec, List<Option> options,
-            Program program, TaskMonitor monitor, MessageLog log)
+    protected void load(Program program, ImporterSettings settings)
             throws CancelledException, IOException {
 
-        FlatProgramAPI api = new FlatProgramAPI(program,monitor);
-        InputStream inStream = provider.getInputStream(0);
+        FlatProgramAPI api = new FlatProgramAPI(program, settings.monitor());
+        InputStream inStream = settings.provider().getInputStream(0);
         Memory mem = program.getMemory();
         // TODO: Load the bytes from 'provider' into the 'program'.
         // This is where we actually "Load" the program into ghidra
@@ -444,7 +443,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
             try {
                 MemoryBlock block = mem.createUninitializedBlock(memregion.name, api.toAddr(memregion.addr), memregion.size, false);
                 block.setPermissions​(memregion.read, memregion.write, memregion.execute);
-                api.createLabel(api.toAddr(memregion.addr),memregion.name.replace(" ","_"),false);
+                api.createLabel(api.toAddr(memregion.addr), memregion.name.replace(" ","_"),false);
             } catch (LockException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -463,7 +462,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
             }
         }
         try {
-            MemoryBlock block = mem.createInitializedBlock("Main Memory", api.toAddr(0x8000000), inStream, 0x200000, monitor, false);
+            MemoryBlock block = mem.createInitializedBlock("Main Memory", api.toAddr(0x8000000), inStream, 0x200000, settings.monitor(), false);
             block.setPermissions​(true, false, true);
         } catch (LockException | MemoryConflictException | AddressOverflowException | CancelledException e) {
             // TODO Auto-generated catch block
@@ -475,7 +474,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
             // Make pointer, label it as stack start
             int stackAddr = mem.getInt(api.toAddr(0x8000000));
             Data stackAddrData = api.createDWord(api.toAddr(0x8000000));
-            api.createLabel(api.toAddr(stackAddr),"_STACK_BEGIN",true);
+            api.createLabel(api.toAddr(stackAddr), "_STACK_BEGIN", true);
             api.createMemoryReference(stackAddrData, api.toAddr(stackAddr), ghidra.program.model.symbol.RefType.DATA);
 
             // Mark the entry point of the binary, also referenced in the datasheet on page 59
@@ -492,7 +491,7 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
                 try {
                     Data ptrData = api.createDWord(api.toAddr(0x8000000+vector.addr));
                     api.createDWord(api.toAddr(0x8000000+vector.addr));
-                    api.createLabel(api.toAddr(0x8000000+vector.addr),vector.name,true);
+                    api.createLabel(api.toAddr(0x8000000+vector.addr), vector.name,true);
                     api.createMemoryReference(ptrData, api.toAddr(ptrVal), ghidra.program.model.symbol.RefType.DATA);
                 } catch(ghidra.util.exception.InvalidInputException e) {
                     // This is ugly, need to fix
@@ -501,10 +500,10 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
             }
 
             for(RegLabel rlabel:USBHSRegs) {
-                api.createLabel(api.toAddr(rlabel.addr+0x40040000),rlabel.label,true);
+                api.createLabel(api.toAddr(rlabel.addr+0x40040000), rlabel.label, true);
             }
             for(RegLabel rlabel:USBFSRegs) {
-                api.createLabel(api.toAddr(rlabel.addr+0x50000000),rlabel.label,true);
+                api.createLabel(api.toAddr(rlabel.addr+0x50000000), rlabel.label, true);
             }
 
         } catch (Exception e) {
@@ -515,9 +514,9 @@ public class stm32Loader extends AbstractLibrarySupportLoader {
 
     @Override
     public List<Option> getDefaultOptions(ByteProvider provider, LoadSpec loadSpec,
-            DomainObject domainObject, boolean isLoadIntoProgram) {
-        List<Option> list =
-            super.getDefaultOptions(provider, loadSpec, domainObject, isLoadIntoProgram);
+            DomainObject domainObject, boolean loadIntoProgram, boolean mirrorFsLayout) {
+        List<Option> list = super.getDefaultOptions(provider, loadSpec, domainObject,
+            loadIntoProgram, mirrorFsLayout);
 
         // TODO: If this loader has custom options, add them to 'list'
         list.add(new Option("Option name goes here", "Default option value goes here"));
